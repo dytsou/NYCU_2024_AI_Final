@@ -106,7 +106,11 @@ class DataFetcher:
             print("Yahoo data download failed: ", e)
             sys.exit()
         print(df_raw.head())
-        df_raw.rename(columns={'timestamp':'date'}, inplace=True)
+        if pd.api.types.is_string_dtype(df_raw['timestamp']):
+            df_raw['date'] = pd.to_datetime(df_raw['timestamp'].str[:19], utc=False)
+        else:
+            df_raw['date'] = pd.to_datetime(df_raw['timestamp'], utc=False)
+        df_raw = df_raw.drop(columns=['timestamp'])
         return df_raw
         
     def preprocess_data(self, df_raw):
@@ -163,7 +167,6 @@ if __name__ == '__main__':
     df = DataFetcher(START_DATE, END_DATE, TIME_INTERVAL, ticker_list)
     print(df.__str__() + "\n")
     data = df.get_data()
-    data['date'] = pd.to_datetime(data['date'].str[:19], utc=False)
     if args.train:
         FILE_PATH = 'train_data.csv'
     if not os.path.exists(DATA_SAVE_DIR):
